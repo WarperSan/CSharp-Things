@@ -23,4 +23,6 @@ Useful commands to use in a C# Console Project FRAMEWORK
 - IsEven
 - IsGreaterThan
 - IsGreaterThanOrEqual
-- 
+- IsLessThan
+- IsLessThanOrEqual
+- IsEqual
