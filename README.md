@@ -29,3 +29,47 @@ Swaps two given items in the array.
 
 ### GetArrayPortion\<T>(T[] array, int startIndex, int length)
 Returns the selected portion of the given array.
+
+# NumberUtils
+### SimplifyNumber\<T>(T number)
+Returns the simplified version of the given number. (1_000 => 1K; 1_234_567 => 1.234M)
+
+### IsInBounds\<T>(T minBound, T maxBound, T number)
+Checks if the given number is in the given bounds
+
+### IsPrimeNumber(int number)
+Checks if the given number is prime.
+
+### Max\<T>(T obj1, T obj2)
+Returns the biggest number between the two given numbers.
+
+### Max\<T>(T[] array)
+Returns a KeyValuePair which contains as the key the biggest number in the array and as the value the indexes of the items which are equal to the biggest number.
+
+### Min\<T>(T obj1, T obj2)
+Returns the smallest number between the two given numbers.
+
+### Min\<T>(T[] array)
+Returns a KeyValuePair which contains as the key the smallest number in the array and as the value the indexes of the items which are equal to the smallest number.
+
+### Sum\<T>(T[] numbers)
+Returns the sum of all the items of the given array.
+
+### Average\<T>(T[] numbers)
+Returns the average of all the items of the give array.
+
+### RemoveEvenNumbers\<T>(ref T[] array)
+Removes all the even numbers in the given array.
+
+### RemoveOddNumbers\<T>(ref T[] array)
+Removes all the odd numbers in the given array.
+
+# Vector Utils
+### Point (Class)
+Holds the X and Y position
+
+### DistanceBetweenTwoPoints(Point point1, Point point2)
+Returns the distance between the two given points
+
+### MoveTowardsPoint(Point a, Point b, int distance)
+Returns an in-between point limited by the given distance. (Will cap at the given distance if the deplacement is bigger than it) 
