@@ -35,7 +35,7 @@ Useful commands to use in a C# Console Project FRAMEWORK
 
 # ConsoleUtils
 Functions useful to interact with the user through the console
-### AskUser<T>(string message)
+### AskUser\<T>(string message)
 Shows the given message in the given color and returns the valid user input of the given type.
 ### ShowConsoleMessage
 Shows the given message in the given color and skips a line if specified.
