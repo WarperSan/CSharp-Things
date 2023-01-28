@@ -31,3 +31,8 @@ Useful commands to use in a C# Console Project FRAMEWORK
 - Point Class
 - DistanceBetweenTwoPoints
 - MoveTowardsPoint
+
+
+# ConsoleUtils
+Functions useful to interact with the user through the console
+## AskUser
