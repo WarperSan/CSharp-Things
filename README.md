@@ -3,13 +3,13 @@ Useful commands to use in a C# Console Project FRAMEWORK
 
 # ConsoleUtils
 ### AskUser\<T>(string message, \[ConsoleColor color])
-Shows the given message in the given color and returns the valid user input of the given type.
+Displays the given message in the given color and returns the valid user input of the given type.
 
 ### ShowConsoleMessage(object message, \[bool useWriteLine], \[ConsoleColor messageColor])
-Shows the given message in the given color and skips a line if specified.
+Displays the given message in the given color and skips a line if specified.
 
 ### ShowMenu(string[] options, \[bool clearConsole], \[char updownChar], \[char sideChar])
-Shows a menu with the given options and returns the index of the selected option.
+Displays a menu containing the given options and returns the index of the selected option.
 
 # ArrayUtils
 ### IsSame\<T>(T[] array1, T[] array2)
@@ -72,4 +72,4 @@ Holds the X and Y position
 Returns the distance between the two given points
 
 ### MoveTowardsPoint(Point a, Point b, int distance)
-Returns an in-between point limited by the given distance. (Will cap at the given distance if the deplacement is bigger than it) 
+Returns the interpolated point between the points a and b with a maximum movement of distance. 
