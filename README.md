@@ -26,3 +26,8 @@ Useful commands to use in a C# Console Project FRAMEWORK
 - IsLessThan
 - IsLessThanOrEqual
 - IsEqual
+
+4. VectorUtils
+- Point Class
+- DistanceBetweenTwoPoints
+- MoveTowardsPoint
