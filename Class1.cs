@@ -13,11 +13,80 @@ namespace Gauthier
             public int Height { get; private set; }
             public int Width { get; private set; }
 
-            public Rect(int X, int Y, int Height, int Width)
+            public string Name { get; set; }
+
+            public Rect(int X, int Y, int Width, int Height, string Name = "New Window")
             {
                 Origin = new Point(X, Y);
                 this.Height = Height;
                 this.Width = Width;
+                this.Name = Name;
+            }
+            public Rect(Point Origin, int Width, int Height, string Name = "New Window")
+            {
+                this.Origin = Origin;
+                this.Height = Height;
+                this.Width = Width;
+                this.Name = Name;
+            }
+
+            /// <summary>
+            /// Prints the given text in the rect's text zone
+            /// </summary>
+            public void PrintText(string message, ConsoleColor textColor = ConsoleColor.White)
+            {
+                if (Width <= 4 && Height <= 4)
+                    return;
+
+                int x = 1;
+                int y = 1;
+
+                string[] words = message.Split(' ');
+
+                for (int j = 0; j < words.Length; j++)
+                {
+                    string word = words[j];
+
+                    if (x + word.Length > Width - 4)
+                    {
+                        if (word.Length <= Width - 4)
+                        {
+                            if (y + 1 == Height - 3)
+                            {
+                                word = "...";
+
+                                x = Width - 6;
+                            }
+                            else
+                            {
+                                y++;
+                                x = 1;
+                            }
+                        }
+                    }
+
+                    if (j != words.Length - 1)
+                        word += " ";
+
+                    char[] chars = word.ToCharArray();
+
+                    for (int i = 0; i < chars.Length; i++)
+                    {
+                        x++;
+
+                        if (x == Width - 1)
+                        {
+                            y++;
+
+                            if (y == Height - 2)
+                                return;
+
+                            x = 2;
+                        }
+
+                        Point.DrawPoint(Origin.X + x, Origin.Y + 1 + y, word[i], textColor);
+                    }
+                }
             }
 
             public void Draw(ConsoleColor color = ConsoleColor.White)
@@ -38,14 +107,100 @@ namespace Gauthier
                 Point bottomRight = new Point(Origin.X + Width - 1, Origin.Y + Height - 1);
                 Point topRight = new Point(Origin.X + Width - 1, Origin.Y);
 
-                ConsoleUtils.DrawLine(Origin, topRight, color);
-                ConsoleUtils.DrawLine(topRight, bottomRight, color);
+                ConsoleUtils.DrawLine(Origin, topRight, '─', color);
+                ConsoleUtils.DrawLine(topRight, bottomRight, '│', color);
 
-                ConsoleUtils.DrawLine(Origin, bottomLeft, color);
-                ConsoleUtils.DrawLine(bottomLeft, bottomRight, color);
+                ConsoleUtils.DrawLine(Origin, bottomLeft, '│', color);
+                ConsoleUtils.DrawLine(bottomLeft, bottomRight, '─', color);
+
+                Point.DrawPoint(Origin, '┌', color);
+                Point.DrawPoint(bottomLeft, '└', color);
+                Point.DrawPoint(bottomRight, '┘', color);
+                Point.DrawPoint(topRight, '┐', color);
+
+                string rectName = $" {Name} ";
+
+                if (rectName.Length + 4 < Width)
+                {
+                    for (int i = 0; i < rectName.Length; i++)
+                    {
+                        Point.DrawPoint(Origin.X + 2 + i, Origin.Y, rectName[i], color);
+                    }
+                }
+            }
+
+            public enum Directions
+            {
+                Top = 0,
+                Left = 1,
+                Right = 2,
+                Bottom = 3
+            }
+
+            /// <summary>
+            /// Slices the rect into two smaller parts
+            /// </summary>
+            /// <param name="size">Size of the new rect</param>
+            /// <returns>Newly cutted rect</returns>
+            /// <exception cref="IndexOutOfRangeException"></exception>
+            public Rect? Slice(Directions sliceDirection, int size)
+            {
+                if (size <= 0)
+                    return null;
+
+                if ((sliceDirection == Directions.Left || sliceDirection == Directions.Right) && size > Width)
+                    throw new IndexOutOfRangeException("Attempt to slice the Rect beyond it's on width");
+
+                if ((sliceDirection == Directions.Top || sliceDirection == Directions.Bottom) && size > Height)
+                    throw new IndexOutOfRangeException("Attempt to slice the Rect beyond it's on height");
+
+                Rect? newRectSlice = null;
+
+                switch (sliceDirection)
+                {
+                    case Directions.Top:
+                        newRectSlice = SliceTop(size);
+                        break;
+                    case Directions.Left:
+                        newRectSlice = SliceLeft(size);
+                        break;
+                    case Directions.Right:
+                        newRectSlice = SliceRight(size);
+                        break;
+                    case Directions.Bottom:
+                        newRectSlice = SliceBottom(size);
+                        break;
+                }
+                return newRectSlice;
+            }
+
+            private Rect SliceLeft(int size)
+            {
+                Width -= size;
+                Origin = new Point(Origin.X + size, Origin.Y);
+
+                return new Rect(Origin.X - size, Origin.Y, size, Height);
+            }
+            private Rect SliceRight(int size)
+            {
+                Width -= size;
+
+                return new Rect(Origin.X + Width, Origin.Y, size, Height);
+            }
+            private Rect SliceTop(int size)
+            {
+                Origin = new Point(Origin.X, Origin.Y + size);
+                Height -= size;
+
+                return new Rect(Origin.X, Origin.Y - size, Width, size);
+            }
+            private Rect SliceBottom(int size)
+            {
+                Height -= size;
+
+                return new Rect(Origin.X, Origin.Y + Height, Width, size);
             }
         }
-
 
         public struct Point
         {
@@ -222,7 +377,7 @@ namespace Gauthier
                 Console.BackgroundColor = currentBackground;
             }
 
-            public static void DrawLine(Point origin, Point destination, ConsoleColor color = ConsoleColor.White)
+            public static void DrawLine(Point origin, Point destination, char dot = '#', ConsoleColor color = ConsoleColor.White)
             {
                 int deltaX = Math.Abs(destination.X - origin.X);
                 int deltaY = Math.Abs(destination.Y - origin.Y);
@@ -238,7 +393,7 @@ namespace Gauthier
                     {
                         linePoint.X = origin.X + i;
 
-                        Point.DrawPoint(linePoint, '#', color);
+                        Point.DrawPoint(linePoint, dot, color);
                     }
                 }
                 else if (deltaY != 0)
@@ -247,7 +402,7 @@ namespace Gauthier
                     {
                         linePoint.Y = origin.Y + i;
 
-                        Point.DrawPoint(linePoint, '#', color);
+                        Point.DrawPoint(linePoint, dot, color);
                     }
                 }
             }
