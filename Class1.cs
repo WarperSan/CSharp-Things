@@ -7,23 +7,91 @@ namespace Gauthier
 {
     public class Addons
     {
+        public struct Rect
+        {
+            public Point Origin { get; private set; }
+            public int Height { get; private set; }
+            public int Width { get; private set; }
+
+            public Rect(int X, int Y, int Height, int Width)
+            {
+                Origin = new Point(X, Y);
+                this.Height = Height;
+                this.Width = Width;
+            }
+
+            public void Draw(ConsoleColor color = ConsoleColor.White)
+            {
+                if (Width < 0)
+                    throw new UnexpectedNegativeException();
+
+                if (Width == 0)
+                    return;
+
+                if (Height < 0)
+                    throw new UnexpectedNegativeException();
+
+                if (Height == 0)
+                    return;
+
+                Point bottomLeft = new Point(Origin.X, Origin.Y + Height - 1);
+                Point bottomRight = new Point(Origin.X + Width - 1, Origin.Y + Height - 1);
+                Point topRight = new Point(Origin.X + Width - 1, Origin.Y);
+
+                ConsoleUtils.DrawLine(Origin, topRight, color);
+                ConsoleUtils.DrawLine(topRight, bottomRight, color);
+
+                ConsoleUtils.DrawLine(Origin, bottomLeft, color);
+                ConsoleUtils.DrawLine(bottomLeft, bottomRight, color);
+            }
+        }
+
+
+        public struct Point
+        {
+            public int X { get; set; }
+            public int Y { get; set; }
+
+            public Point(int x, int y)
+            {
+                X = x;
+                Y = y;
+            }
+
+            public Point(Point point)
+            {
+                X = point.X;
+                Y = point.Y;
+            }
+
+            public static void DrawPoint(Point point, char dot, ConsoleColor color = ConsoleColor.White) => DrawPoint(point.X, point.Y, dot, color);
+
+            public static void DrawPoint(int x, int y, char dot, ConsoleColor color = ConsoleColor.White)
+            {
+                if (x < 0)
+                    throw new UnexpectedNegativeException();
+
+                if (y < 0)
+                    throw new UnexpectedNegativeException();
+
+                int tempCursorLeft = Console.CursorLeft;
+                int tempCursorTop = Console.CursorTop;
+
+                Console.CursorLeft = x;
+                Console.CursorTop = y;
+
+                ConsoleUtils.ShowConsoleMessage(dot, false, color);
+
+                Console.CursorLeft = tempCursorLeft;
+                Console.CursorTop = tempCursorTop;
+            }
+        }
+
         /// <summary>
         /// Utilities for Vectors
         /// </summary>
         public class VectorUtils
         {
-            public class Point
-            {
-                public double X { get; set; }
-                public double Y { get; set; }
-
-                public Point(double x, double y)
-                {
-                    X = x;
-                    Y = y;
-                }
-            }
-
             /// <returns>Distance between the two given points</returns>
             public static double DistanceBetweenTwoPoints(Point point1, Point point2)
             {
@@ -52,6 +120,16 @@ namespace Gauthier
             }
         }
 
+        public class StringUtils
+        {
+            public static string GetReverse(string message)
+            {
+                char[] charArray = message.ToCharArray();
+                Array.Reverse(charArray);
+                return new string(charArray);
+            }
+        }
+
         /// <summary>
         /// Utilites for using the Console
         /// </summary>
@@ -71,7 +149,7 @@ namespace Gauthier
 
                 do
                 {
-                    ShowConsoleMessage(message, true, color);
+                    ShowConsoleMessage(message, false, color);
                     answer = Console.ReadLine();
 
                     if (string.IsNullOrEmpty(answer))
@@ -129,12 +207,49 @@ namespace Gauthier
             /// Affiche la question donnée en écrivant la question dans la couleur assignée aux questions (visuellement plus agréable, mais nécessaire)
             /// </summary>
             /// <param name="message">Message à afficher</param>
-            public static void ShowConsoleMessage(object message, bool useWriteLine = true, ConsoleColor messageColor = ConsoleColor.White)
+            public static void ShowConsoleMessage(object message, bool useWriteLine = true, ConsoleColor foregroundColor = ConsoleColor.White, ConsoleColor backgroundColor = ConsoleColor.Black)
             {
-                Console.ForegroundColor = messageColor;
+                ConsoleColor currentForeground = Console.ForegroundColor;
+                ConsoleColor currentBackground = Console.BackgroundColor;
+
+                Console.ForegroundColor = foregroundColor;
+                Console.BackgroundColor = backgroundColor;
+
                 Console.Write(message);
                 if (useWriteLine) Console.WriteLine();
-                Console.ResetColor();
+
+                Console.ForegroundColor = currentForeground;
+                Console.BackgroundColor = currentBackground;
+            }
+
+            public static void DrawLine(Point origin, Point destination, ConsoleColor color = ConsoleColor.White)
+            {
+                int deltaX = Math.Abs(destination.X - origin.X);
+                int deltaY = Math.Abs(destination.Y - origin.Y);
+
+                if (origin.X > destination.X || origin.Y > destination.Y)
+                    origin = destination;
+
+                Point linePoint = new Point(origin.X, origin.Y);
+
+                if (deltaX != 0)
+                {
+                    for (int i = 0; i <= deltaX; i++)
+                    {
+                        linePoint.X = origin.X + i;
+
+                        Point.DrawPoint(linePoint, '#', color);
+                    }
+                }
+                else if (deltaY != 0)
+                {
+                    for (int i = 0; i <= deltaY; i++)
+                    {
+                        linePoint.Y = origin.Y + i;
+
+                        Point.DrawPoint(linePoint, '#', color);
+                    }
+                }
             }
 
             /// <summary>
@@ -143,65 +258,61 @@ namespace Gauthier
             /// <param name="options">All the available options</param>
             /// <param name="clearConsole">Does the menu cause a clear of the console ?</param>
             /// <param name="updownChar">Character used for the top and bottom row</param>
-            /// <param name="sideChar">Character used for the side row</param>
+            /// <param name="sideBorder">String used to make the side borders</param>
             /// <returns>Index of the selected option</returns>
             /// <exception cref="InvalidArrayLength"></exception>
-            public static int ShowMenu(string[] options, bool clearConsole = true, char updownChar = '-', char sideChar = '|')
+            public static int ShowMenu(string[] options, ConsoleColor topDownColor = ConsoleColor.Red, ConsoleColor sideColor = ConsoleColor.Green, char updownChar = '=', string sideBorder = " | ", string specialRightBorder = "")
             {
                 if (options.Length == 0)
                     throw new InvalidArrayLength("The given array doesn't contain any item");
 
                 int[] lengths = new int[options.Length];
+                int nombreEspace;
                 for (int i = 0; i < options.Length; i++)
                 {
-                    options[i] = $"{sideChar} {i + 1}. {options[i]}";
-                    lengths[i] = options[i].Length;
+                    nombreEspace = (options.Length + 1).ToString().Length - (i + 1).ToString().Length;
+                    lengths[i] = (i + 1).ToString().Length + options[i].Length + 2 + nombreEspace;
                 }
 
-                // Find longest line
-                int longestOption = NumberUtils.Max(lengths).Key;
+                int width = NumberUtils.Max(lengths).Key;
+
+                // Top border
+                for (int i = 0; i < width + sideBorder.Length * 2; i++) { ShowConsoleMessage(updownChar, false, topDownColor); }
+                Console.WriteLine();
 
                 for (int i = 0; i < options.Length; i++)
                 {
-                    int lengthDiff = longestOption + 1 - options[i].Length;
-                    for (int j = 0; j <= lengthDiff; j++)
-                    {
-                        options[i] += " ";
-                    }
+                    ShowConsoleMessage(sideBorder, false, sideColor); // Write Left Border
+                    Console.Write($"{i + 1}. "); // Write "X. "
 
-                    options[i] += sideChar;
+                    nombreEspace = (options.Length + 1).ToString().Length - (i + 1).ToString().Length;
+                    for (int j = 0; j < nombreEspace; j++) { Console.Write(" "); }
+
+                    Console.Write(options[i]); // Write Option
+
+                    for (int j = 0; j < width - lengths[i]; j++) { Console.Write(" "); }
+
+                    if (string.IsNullOrEmpty(specialRightBorder))
+                        ShowConsoleMessage(StringUtils.GetReverse(sideBorder), true, sideColor);
+                    else
+                        ShowConsoleMessage(specialRightBorder, true, sideColor);
                 }
 
-                int index = 0;
+                // Bottom border
+                for (int i = 0; i < width + sideBorder.Length * 2; i++) { ShowConsoleMessage(updownChar, false, topDownColor); }
+                Console.WriteLine();
 
+                int index;
+                bool result;
                 do
                 {
-                    if (clearConsole)
-                        Console.Clear();
+                    index = AskUser<int>($"Enter the number of the desired action [{1}; {options.Length}]: ");
+                    result = NumberUtils.IsInBounds(1, options.Length, index);
 
-                    for (int i = 0; i < options[0].Length; i++)
-                    {
-                        Console.Write(updownChar);
-                    }
-                    Console.WriteLine();
+                    if (!result)
+                        ShowConsoleMessage($"The must be in the following region: [{1}; {options.Length}]", true, ConsoleColor.Red);
+                } while (!result);
 
-                    for (int i = 0; i < options.Length; i++)
-                    {
-                        Console.WriteLine(options[i]);
-                    }
-
-                    for (int i = 0; i < options[0].Length; i++)
-                    {
-                        Console.Write(updownChar);
-                    }
-                    Console.WriteLine();
-                    Console.WriteLine();
-
-                    index = AskUser<int>("Enter the desired option's number");
-                } while (index <= 0 || index > options.Length);
-
-                if (clearConsole)
-                    Console.Clear();
                 return index;
             }
         }
@@ -716,6 +827,11 @@ namespace Gauthier
         public class ArrayComparaisonException : SystemException
         {
             public ArrayComparaisonException(string message) : base(message) { }
+        }
+
+        public class UnexpectedNegativeException : SystemException
+        {
+            public UnexpectedNegativeException() : base("The given number isn't supposed to be a negative") { }
         }
     }
 }
