@@ -12,8 +12,13 @@ namespace Gauthier
             public Point Origin { get; private set; }
             public int Height { get; private set; }
             public int Width { get; private set; }
-
             public string Name { get; set; }
+
+            public int TextHeight { get; private set; }
+            public int TextWidth { get; private set; }
+
+            public List<string> lines = new List<string> { };
+            private ConsoleColor currentTextColor = ConsoleColor.White;
 
             public Rect(int X, int Y, int Width, int Height, string Name = "New Window")
             {
@@ -35,58 +40,62 @@ namespace Gauthier
             /// </summary>
             public void PrintText(string message, ConsoleColor textColor = ConsoleColor.White)
             {
-                if (Width <= 4 && Height <= 4)
-                    return;
+                ClearText();
+                lines = StringUtils.ConvertToWarpText(message, Width, Height).ToList();
 
-                int x = 1;
-                int y = 1;
+                ShowText(ref lines, textColor);
+            }
 
-                string[] words = message.Split(' ');
+            private void ShowText(ref List<string> lines, ConsoleColor textColor = ConsoleColor.White)
+            {
+                if (lines.Count > Height - 4)
+                    lines.RemoveRange(Height - 4, lines.Count - Height + 4);
 
-                for (int j = 0; j < words.Length; j++)
+                currentTextColor = textColor;
+
+                TextHeight = lines.Count;
+
+                if (TextHeight != 1)
+                    TextWidth = Width - 4;
+                else
+                    TextWidth = lines[0].Length;
+
+                for (int i = 0; i < lines.Count; i++)
                 {
-                    string word = words[j];
+                    if (i >= Height - 4)
+                        return;
 
-                    if (x + word.Length > Width - 4)
+                    for (int k = 0; k < lines[i].Length; k++)
                     {
-                        if (word.Length <= Width - 4)
-                        {
-                            if (y + 1 == Height - 3)
-                            {
-                                word = "...";
-
-                                x = Width - 6;
-                            }
-                            else
-                            {
-                                y++;
-                                x = 1;
-                            }
-                        }
-                    }
-
-                    if (j != words.Length - 1)
-                        word += " ";
-
-                    char[] chars = word.ToCharArray();
-
-                    for (int i = 0; i < chars.Length; i++)
-                    {
-                        x++;
-
-                        if (x == Width - 1)
-                        {
-                            y++;
-
-                            if (y == Height - 2)
-                                return;
-
-                            x = 2;
-                        }
-
-                        Point.DrawPoint(Origin.X + x, Origin.Y + 1 + y, word[i], textColor);
+                        Point.DrawPoint(Origin.X + k + 2, Origin.Y + 1 + i + 1, lines[i][k], textColor);
                     }
                 }
+            }
+
+            public void ClearText()
+            {
+                for (int i = 0; i < TextHeight; i++)
+                {
+                    for (int j = 0; j < TextWidth; j++)
+                    {
+                        Point.DrawPoint(Origin.X + j + 2, Origin.Y + i + 2, ' ');
+                    }
+                }
+            }
+
+            public void AddNewLine(string line, bool addToStart = false, bool causeUpdate = true)
+            {
+                string[] converted = StringUtils.ConvertToWarpText(line, Width, Height);
+
+                for (int i = 0; i < converted.Length; i++)
+                {
+                    if (addToStart)
+                        lines.Insert(0, converted[i]);
+                    else
+                        lines.Add(converted[i]);
+                }
+
+                if (causeUpdate) ShowText(ref lines, currentTextColor);
             }
 
             public void Draw(ConsoleColor color = ConsoleColor.White)
@@ -282,6 +291,74 @@ namespace Gauthier
                 char[] charArray = message.ToCharArray();
                 Array.Reverse(charArray);
                 return new string(charArray);
+            }
+
+            public static string[] ConvertToWarpText(string message, int Width, int Height)
+            {
+                List<string> lines = new List<string>() { "" };
+
+                int x = 1;
+                int y = 1;
+
+                string[] words = message.Split(' ');
+
+                bool stop = false;
+
+                for (int j = 0; j < words.Length; j++)
+                {
+                    string word = words[j];
+
+                    if (x + word.Length > Width - 4)
+                    {
+                        if (word.Length <= Width - 4)
+                        {
+                            if (y + 1 == Height - 3)
+                            {
+                                word = "...";
+
+                                x = Width - 6;
+                                stop = true;
+                            }
+                            else
+                            {
+                                y++;
+                                lines.Add("");
+                                x = 1;
+                            }
+                        }
+                    }
+
+                    if (j != words.Length - 1)
+                        word += " ";
+
+                    char[] chars = word.ToCharArray();
+
+                    for (int i = 0; i < chars.Length; i++)
+                    {
+                        x++;
+
+                        if (x == Width - 2 || stop)
+                        {
+                            if (stop)
+                            {
+                                lines[y - 1] = lines[y - 1].Remove(lines[y - 1].Length - 3, 3) + "...";
+                                return lines.ToArray();
+                            }
+
+                            y++;
+
+                            if (y == Height - 2 || stop)
+                                return lines.ToArray();
+
+                            lines.Add("");
+
+                            x = 2;
+                        }
+
+                        lines[y - 1] += word[i];
+                    }
+                }
+                return lines.ToArray();
             }
         }
 
@@ -715,8 +792,6 @@ namespace Gauthier
             /// <returns>Biggest number between the given numbers</returns>
             public static T Max<T>(T obj1, T obj2)
             {
-
-
                 if (IsGreaterThanOrEqual(obj1, obj2))
                     return obj1;
                 return obj2;
